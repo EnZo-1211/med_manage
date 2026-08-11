@@ -9,6 +9,7 @@ class PatientAccess(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     access_code_hash = Column(String, nullable=False)
+    role = Column(String, default="viewer") # "editor" or "viewer"
     status = Column(String, default="ACTIVE") # ACTIVE, REVOKED, EXPIRED
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)

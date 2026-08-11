@@ -30,15 +30,28 @@ def seed_db():
             )
             db.add(test_patient)
             
-            # Create access code 'bou'
-            print("Creating access code 'bou'...")
-            hashed_code = hash_access_code("bou")
-            test_access = PatientAccess(
+            # Create access code 'bou' (viewer)
+            print("Creating access code 'bou' (viewer)...")
+            hashed_code_viewer = hash_access_code("bou")
+            test_access_viewer = PatientAccess(
                 patient_id=patient_id,
-                access_code_hash=hashed_code,
+                access_code_hash=hashed_code_viewer,
+                role="viewer",
                 status="ACTIVE"
             )
-            db.add(test_access)
+            db.add(test_access_viewer)
+
+            # Create access code 'editor123' (editor)
+            print("Creating access code 'editor123' (editor)...")
+            hashed_code_editor = hash_access_code("editor123")
+            test_access_editor = PatientAccess(
+                patient_id=patient_id,
+                access_code_hash=hashed_code_editor,
+                role="editor",
+                status="ACTIVE"
+            )
+            db.add(test_access_editor)
+            
             db.commit()
             print("Test data seeded successfully!")
         else:

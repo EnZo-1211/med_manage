@@ -1,20 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface MedicineCandidate {
+  name: string;
+  generic_name?: string;
+  brand_name?: string;
+}
+
 export default function AddMedication() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  
   const [medName, setMedName] = useState("");
+  const [searchResults, setSearchResults] = useState<MedicineCandidate[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [dose, setDose] = useState("");
   const [frequency, setFrequency] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  const handleNext = () => setStep(2);
+
+  useEffect(() => {
+    if (medName.length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/medicines/search?q=${encodeURIComponent(medName)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+          setShowDropdown(data.length > 0);
+        }
+      } catch (error) {
+        console.error("Search error", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [medName]);
+
+  const handleSelectMedication = (name: string) => {
+    setMedName(name);
+    setShowDropdown(false);
+  };
   
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,31 +113,55 @@ export default function AddMedication() {
       </header>
 
       <div className="glass-panel p-8 rounded-2xl">
-        {/* Step Indicator */}
-        <div className="flex items-center mb-8">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step === 1 ? 'bg-blue-500 text-white' : 'bg-blue-500/20 text-blue-400'}`}>1</div>
-          <div className={`h-1 flex-grow mx-2 rounded ${step === 2 ? 'bg-blue-500' : 'bg-slate-700'}`}></div>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step === 2 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-gray-400'}`}>2</div>
-        </div>
-
-        {step === 1 && (
-          <div className="animate-in slide-in-from-right-4 duration-300">
+        <form onSubmit={handleSave} className="animate-in slide-in-from-right-4 duration-300 space-y-8">
+          
+          {/* Identify Medicine Section */}
+          <div>
             <h2 className="text-xl font-semibold text-white mb-6">Identify Medicine</h2>
-            
             <div className="space-y-6">
               <div>
                 <label className="text-sm font-medium text-gray-300 block mb-2">Medicine Name</label>
                 <div className="relative">
                   <input
                     type="text"
+                    required
                     placeholder="Search e.g., Aspirin"
                     className="w-full px-4 py-3 pl-10 rounded-xl input-field text-sm"
                     value={medName}
                     onChange={(e) => setMedName(e.target.value)}
+                    onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
                   />
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
+                  {isSearching && (
+                    <div className="absolute right-3 top-3.5">
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                  {showDropdown && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-2 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                      {searchResults.map((result, idx) => (
+                        <div 
+                          key={idx}
+                          className="px-4 py-3 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0 transition-colors"
+                          onClick={() => handleSelectMedication(result.name)}
+                        >
+                          <p className="text-sm font-medium text-white">{result.name}</p>
+                          {(result.generic_name || result.brand_name) && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {result.generic_name && `Generic: ${result.generic_name}`}
+                              {result.generic_name && result.brand_name && ' | '}
+                              {result.brand_name && `Brand: ${result.brand_name}`}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Start typing to search our database.</p>
               </div>
@@ -122,78 +182,64 @@ export default function AddMedication() {
                 </div>
               </div>
             </div>
+          </div>
 
+          <div className="border-t border-slate-700/50 pt-8"></div>
+
+          {/* Instructions Section */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-6">Set Instructions</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-2">Dosage (e.g. 1 pill, 10mg)</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 rounded-xl input-field text-sm"
+                  value={dose}
+                  onChange={(e) => setDose(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-2">Frequency</label>
+                <select 
+                  required
+                  className="w-full px-4 py-3 rounded-xl input-field text-sm appearance-none"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                >
+                  <option value="" disabled>Select how often</option>
+                  <option value="Once daily">Once daily</option>
+                  <option value="Twice daily">Twice daily</option>
+                  <option value="As needed">As needed</option>
+                  <option value="Every 8 hours">Every 8 hours</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-2">Further Instructions / Notes (Optional)</label>
+                <textarea
+                  className="w-full px-4 py-3 rounded-xl input-field text-sm"
+                  rows={3}
+                  placeholder="e.g. Take with food, swallow whole"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4">
             <button 
-              onClick={handleNext}
-              disabled={!medName}
-              className="w-full py-3 mt-8 rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              className="w-full py-3 rounded-xl btn-primary"
+              disabled={loading || !medName || !dose || !frequency}
             >
-              Continue to Dosage
+              {loading ? "Saving..." : "Save Medication"}
             </button>
           </div>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleSave} className="animate-in slide-in-from-right-4 duration-300 space-y-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Set Instructions for {medName}</h2>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-300 block mb-2">Dosage (e.g. 1 pill, 10mg)</label>
-              <input
-                type="text"
-                required
-                className="w-full px-4 py-3 rounded-xl input-field text-sm"
-                value={dose}
-                onChange={(e) => setDose(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-300 block mb-2">Frequency</label>
-              <select 
-                required
-                className="w-full px-4 py-3 rounded-xl input-field text-sm appearance-none"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-              >
-                <option value="" disabled>Select how often</option>
-                <option value="Once daily">Once daily</option>
-                <option value="Twice daily">Twice daily</option>
-                <option value="As needed">As needed</option>
-                <option value="Every 8 hours">Every 8 hours</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-300 block mb-2">Further Instructions / Notes (Optional)</label>
-              <textarea
-                className="w-full px-4 py-3 rounded-xl input-field text-sm"
-                rows={3}
-                placeholder="e.g. Take with food, swallow whole"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              ></textarea>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setStep(1)}
-                className="flex-1 py-3 rounded-xl bg-slate-800 text-white font-medium hover:bg-slate-700 transition-colors"
-                disabled={loading}
-              >
-                Back
-              </button>
-              <button 
-                type="submit"
-                className="flex-[2] py-3 rounded-xl btn-primary"
-                disabled={loading}
-              >
-                {loading ? "Saving..." : "Save Medication"}
-              </button>
-            </div>
-          </form>
-        )}
+        </form>
       </div>
     </div>
   );

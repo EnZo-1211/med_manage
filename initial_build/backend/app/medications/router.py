@@ -11,7 +11,32 @@ router = APIRouter(prefix="/medications", tags=["medications"])
 @router.get("/patient/{patient_id}", response_model=List[schemas.DashboardMedicationResponse])
 def get_patient_medications(patient_id: uuid.UUID, db: Session = Depends(get_db)):
     # This also acts as the Dashboard API aggregation endpoint
-    return service.get_active_medications(db, patient_id)
+    return service.get_patient_medications(db, patient_id)
+
+@router.get("/{medication_id}", response_model=schemas.DashboardMedicationResponse)
+def get_medication(medication_id: uuid.UUID, db: Session = Depends(get_db)):
+    from app.medications.models import PatientMedication
+    from app.medicines.models import Medicine
+    
+    result = db.query(PatientMedication, Medicine).join(
+        Medicine, PatientMedication.medicine_id == Medicine.id
+    ).filter(PatientMedication.id == medication_id).first()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Medication not found")
+        
+    pm, med = result
+    return schemas.DashboardMedicationResponse(
+        id=pm.id,
+        patient_id=pm.patient_id,
+        medicine_id=pm.medicine_id,
+        medicine_name=med.name,
+        medicine_image=med.primary_image_url,
+        dose=pm.dose,
+        frequency=pm.frequency,
+        notes=pm.notes,
+        is_active=pm.is_active
+    )
 
 @router.post("/", response_model=schemas.PatientMedicationResponse)
 def add_medication(medication: schemas.PatientMedicationCreate, db: Session = Depends(get_db)):

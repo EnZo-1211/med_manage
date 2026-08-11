@@ -15,30 +15,42 @@ class MedicineProvider(ABC):
     def search(self, query: str) -> List[MedicineCandidate]:
         pass
 
-class DummyMedicineProvider(MedicineProvider):
-    def search(self, query: str) -> List[MedicineCandidate]:
-        if "aspirin" in query.lower():
-            return [
-                MedicineCandidate(
-                    name="Aspirin 81mg",
-                    generic_name="Aspirin",
-                    primary_image_url="https://example.com/aspirin.jpg",
-                    external_source="DummyDB",
-                    external_id="123"
-                )
-            ]
-        return []
+from app.medicines.abdm import ABDMDrugRegistryClient
 
-class ExternalAPIProvider(MedicineProvider):
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        
+class ABDMDrugRegistryProvider(MedicineProvider):
+    def __init__(self):
+        self.client = ABDMDrugRegistryClient()
+
     def search(self, query: str) -> List[MedicineCandidate]:
-        # TODO: Implement the real external API call using requests or httpx
-        # e.g., response = requests.get(f"https://api.example.com/drugs?q={query}&key={self.api_key}")
-        # Return parsed candidates
-        return []
+        if not query or len(query) < 2:
+            return []
+            
+        try:
+            results = self.client.search_drugs(query)
+            candidates = []
+            seen_names = set()
+            
+            for item in results:
+                brand_name = item.get("brandName", "")
+                generic_name = item.get("genericName", "")
+                
+                name = brand_name.title() if brand_name else generic_name.title()
+                if not name or name in seen_names:
+                    continue
+                    
+                seen_names.add(name)
+                candidates.append(MedicineCandidate(
+                    name=name,
+                    brand_name=brand_name.title() if brand_name else None,
+                    generic_name=generic_name.title() if generic_name else None,
+                    primary_image_url=None,
+                    external_source="ABDM",
+                    external_id=item.get("id", "")
+                ))
+            return candidates
+        except Exception as e:
+            print(f"Error querying ABDM provider: {e}")
+            return []
 
 def get_medicine_provider() -> MedicineProvider:
-    # For now, return Dummy. When we have the specific API details, switch to External.
-    return DummyMedicineProvider()
+    return ABDMDrugRegistryProvider()

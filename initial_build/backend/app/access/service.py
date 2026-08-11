@@ -18,7 +18,7 @@ def create_patient_access(db: Session, access: AccessCreate) -> PatientAccess:
     db.refresh(db_access)
     return db_access
 
-def verify_login(db: Session, patient_code: str, access_code: str) -> uuid.UUID | None:
+def verify_login(db: Session, patient_code: str, access_code: str) -> tuple[uuid.UUID, str] | None:
     patient = db.query(Patient).filter(Patient.patient_code == patient_code, Patient.is_active == True).first()
     if not patient:
         return None
@@ -34,6 +34,6 @@ def verify_login(db: Session, patient_code: str, access_code: str) -> uuid.UUID 
             # Update last used
             record.last_used_at = datetime.datetime.now(datetime.timezone.utc)
             db.commit()
-            return patient.id
+            return patient.id, record.role
             
     return None

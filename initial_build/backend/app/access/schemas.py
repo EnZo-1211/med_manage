@@ -25,3 +25,4 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     patient_id: UUID
+    role: str

@@ -13,12 +13,14 @@ def create_access(access: schemas.AccessCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=schemas.LoginResponse)
 def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
-    patient_id = service.verify_login(db, request.patient_code, request.access_code)
-    if not patient_id:
+    login_result = service.verify_login(db, request.patient_code, request.access_code)
+    if not login_result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect patient code or access code",
         )
+    
+    patient_id, role = login_result
     # For V1 prototype, returning patient_id as the token representation.
     # In V2, replace with a real JWT encoding the patient_id and roles.
-    return {"access_token": str(patient_id), "patient_id": patient_id}
+    return {"access_token": str(patient_id), "patient_id": patient_id, "role": role}

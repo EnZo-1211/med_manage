@@ -25,6 +25,7 @@ class PatientMedicationUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     notes: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class PatientMedicationResponse(PatientMedicationBase):
     id: UUID
@@ -44,6 +45,7 @@ class DashboardMedicationResponse(BaseModel):
     frequency: str
     notes: Optional[str] = None
     time: str = "08:00 AM" # hardcoded for V1 UI
+    is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -22,6 +22,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem("patient_id", data.patient_id);
+        localStorage.setItem("access_role", data.role);
         router.push("/dashboard");
       } else {
         alert("Invalid Patient ID or Access Code");
@@ -58,7 +59,7 @@ export default function Home() {
             <input
               id="patientCode"
               type="text"
-              placeholder="e.g. P-10382"
+              placeholder="e.g. 100"
               required
               className="w-full px-4 py-3 rounded-xl input-field text-sm"
               value={patientCode}
@@ -81,8 +82,8 @@ export default function Home() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3 mt-4 rounded-xl btn-primary flex justify-center items-center group"
+            disabled={loading || !patientCode || !accessCode}
+            className="w-full py-3 mt-4 rounded-xl btn-primary flex justify-center items-center group disabled:opacity-50"
           >
             {loading ? (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
