@@ -1,29 +1,91 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../../../config";
+
+interface MedicineCandidate {
+  name: string;
+  generic_name?: string;
+  brand_name?: string;
+}
 
 export default function AddMedicine() {
   const { id } = useParams();
   const router = useRouter();
   
-  const [step, setStep] = useState(3); // Defaulting to step 3 to match the template UI
+  const [medName, setMedName] = useState("");
+  const [searchResults, setSearchResults] = useState<MedicineCandidate[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   
-  const [formData, setFormData] = useState({
-    medicine_name: 'Paracetamol',
-    dose: '1 tablet',
-    frequency: 'Twice daily',
-    timing: 'After food',
-    start_date: '',
-    notes: ''
-  });
+  const [dose, setDose] = useState("1 tablet");
+  const [frequency, setFrequency] = useState("Twice daily");
+  const [timing, setTiming] = useState("After food");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (medName.length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/medicines/search?q=${encodeURIComponent(medName)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+          setShowDropdown(data.length > 0);
+        }
+      } catch (error) {
+        console.error("Search error", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [medName]);
+
+  const handleSelectMedication = (name: string) => {
+    setMedName(name);
+    setShowDropdown(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call
-    console.log("Saving medicine", formData);
-    router.push(`/dashboard/patients/${id}`);
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/medications/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: id,
+          medicine_name: medName,
+          dose,
+          frequency,
+          timing,
+          start_date: startDate,
+          notes
+        }),
+      });
+
+      if (response.ok) {
+        router.push(`/dashboard/patients/${id}`);
+      } else {
+        console.error("Failed to save");
+      }
+    } catch (error) {
+      console.error("Error saving medicine", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,41 +117,68 @@ export default function AddMedicine() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
         
-        {/* Stepper */}
-        <div className="flex items-center justify-between mb-10 relative">
-          <div className="absolute left-0 top-1/2 w-full h-0.5 bg-gray-200 -z-10 transform -translate-y-1/2"></div>
-          
-          <div className="flex flex-col items-center bg-white px-4 relative">
-            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center mb-2 shadow-[0_0_0_4px_white]">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-gray-900">Search Medicine</span>
-          </div>
-
-          <div className="flex flex-col items-center bg-white px-4 relative">
-            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center mb-2 shadow-[0_0_0_4px_white]">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-gray-900">Confirm Medicine</span>
-          </div>
-
-          <div className="flex flex-col items-center bg-white px-4 relative">
-            <div className="w-8 h-8 rounded-full bg-[#FF6600] text-white flex items-center justify-center font-bold mb-2 shadow-[0_0_0_4px_white]">
-              3
-            </div>
-            <span className="text-sm font-bold text-gray-900">Add Details</span>
-          </div>
+        {/* Simplified Header instead of Stepper */}
+        <div className="mb-8 border-b border-gray-100 pb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Medicine Details</h2>
+          <p className="text-sm text-gray-500 mt-1">Search for a medicine and enter the prescription details below.</p>
         </div>
 
         <form onSubmit={handleSubmit}>
+          
+          <div className="mb-8">
+            <label className="text-sm font-medium text-gray-700 block mb-2">Medicine Name</label>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                placeholder="Search e.g., Aspirin"
+                className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm pr-10"
+                value={medName}
+                onChange={(e) => setMedName(e.target.value)}
+                onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
+              />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute right-3 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {isSearching && (
+                <div className="absolute right-10 top-3.5">
+                  <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              )}
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                  {searchResults.map((result, idx) => (
+                    <div 
+                      key={idx}
+                      className="px-4 py-3 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors"
+                      onClick={() => handleSelectMedication(result.name)}
+                    >
+                      <p className="text-sm font-medium text-gray-900">{result.name}</p>
+                      {(result.generic_name || result.brand_name) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {result.generic_name && `Generic: ${result.generic_name}`}
+                          {result.generic_name && result.brand_name && ' | '}
+                          {result.brand_name && `Brand: ${result.brand_name}`}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Dose</label>
-              <select className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm">
+              <select 
+                className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                value={dose}
+                onChange={(e) => setDose(e.target.value)}
+              >
                 <option>1 tablet</option>
                 <option>2 tablets</option>
                 <option>5 ml</option>
@@ -99,7 +188,11 @@ export default function AddMedicine() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Frequency</label>
-              <select className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm">
+              <select 
+                className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+              >
                 <option>Once daily</option>
                 <option>Twice daily</option>
                 <option>Thrice daily</option>
@@ -109,7 +202,11 @@ export default function AddMedicine() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Timing</label>
-              <select className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm">
+              <select 
+                className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                value={timing}
+                onChange={(e) => setTiming(e.target.value)}
+              >
                 <option>After food</option>
                 <option>Before food</option>
                 <option>With food</option>
@@ -125,7 +222,8 @@ export default function AddMedicine() {
                 <input 
                   type="date" 
                   className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
-                  defaultValue="2025-08-01"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
             </div>
@@ -136,6 +234,8 @@ export default function AddMedicine() {
                 type="text" 
                 placeholder="Any additional notes"
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
               />
             </div>
           </div>
@@ -144,15 +244,27 @@ export default function AddMedicine() {
             <button 
               type="button" 
               onClick={() => router.back()}
-              className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={loading}
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-[#FF6600] hover:bg-[#E65C00] transition-colors shadow-sm"
+              className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-[#FF6600] hover:bg-[#E65C00] transition-colors shadow-sm disabled:opacity-50 flex items-center"
+              disabled={loading || !medName}
             >
-              Save Medicine
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                "Save Medicine"
+              )}
             </button>
           </div>
         </form>
