@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL } from "../config";
 
 export default function PatientsList() {
   const router = useRouter();

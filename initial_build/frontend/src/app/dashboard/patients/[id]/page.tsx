@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE_URL } from "../../../../config";
+import { API_BASE_URL } from "../../../config";
 
 export default function PatientDetails() {
   const { id } = useParams();
