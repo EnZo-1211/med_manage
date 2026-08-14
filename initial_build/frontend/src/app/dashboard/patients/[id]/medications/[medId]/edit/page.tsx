@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../../../../config";
 
 export default function EditMedicine() {
   const { id, medId } = useParams();
@@ -19,7 +20,7 @@ export default function EditMedicine() {
   useEffect(() => {
     const fetchMedication = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`);
+        const response = await fetch(`${API_BASE_URL}/medications/${medId}`);
         if (response.ok) {
           const data = await response.json();
           setFormData({
@@ -43,7 +44,7 @@ export default function EditMedicine() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`, {
+      const response = await fetch(`${API_BASE_URL}/medications/${medId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

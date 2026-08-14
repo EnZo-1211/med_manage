@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "../../config";
 
 export default function PatientsList() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function PatientsList() {
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/patients/`);
+        const response = await fetch(`${API_BASE_URL}/patients/`);
         if (response.ok) {
           const data = await response.json();
           setPatients(data);

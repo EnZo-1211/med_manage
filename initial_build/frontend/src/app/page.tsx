@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "./config";
 
 export default function Home() {
   const [patientCode, setPatientCode] = useState("");
@@ -13,7 +14,7 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/access/login", {
+      const response = await fetch(`${API_BASE_URL}/access/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patient_code: patientCode, access_code: accessCode }),

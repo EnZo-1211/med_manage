@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../../config";
 
 export default function EditMedication() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function EditMedication() {
   useEffect(() => {
     const fetchMedication = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/medications/${id}`);
+        const response = await fetch(`${API_BASE_URL}/medications/${id}`);
         if (response.ok) {
           const data = await response.json();
           setMedName(data.medicine_name);
@@ -46,7 +47,7 @@ export default function EditMedication() {
     e.preventDefault();
     setSaving(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/medications/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

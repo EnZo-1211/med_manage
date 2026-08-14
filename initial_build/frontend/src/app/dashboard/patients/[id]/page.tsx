@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../../../config";
 
 export default function PatientDetails() {
   const { id } = useParams();
@@ -28,20 +29,20 @@ export default function PatientDetails() {
   const fetchData = async () => {
     try {
       // Fetch patient details
-      const patientResponse = await fetch(`http://127.0.0.1:8000/patients/${id}`);
+      const patientResponse = await fetch(`${API_BASE_URL}/patients/${id}`);
       if (patientResponse.ok) {
         const patientData = await patientResponse.json();
         setPatient(patientData);
         
         // Fetch medications
-        const medResponse = await fetch(`http://127.0.0.1:8000/medications/patient/${id}`);
+        const medResponse = await fetch(`${API_BASE_URL}/medications/patient/${id}`);
         if (medResponse.ok) {
           const medData = await medResponse.json();
           setMedications(medData);
         }
 
         // Fetch reports
-        const reportsResponse = await fetch(`http://127.0.0.1:8000/reports/patient/${id}`);
+        const reportsResponse = await fetch(`${API_BASE_URL}/reports/patient/${id}`);
         if (reportsResponse.ok) {
           const reportsData = await reportsResponse.json();
           setReports(reportsData);
@@ -75,7 +76,7 @@ export default function PatientDetails() {
     const action = currentStatus ? "deactivate" : "activate";
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`, {
+      const response = await fetch(`${API_BASE_URL}/medications/${medId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus })
@@ -106,7 +107,7 @@ export default function PatientDetails() {
     const { medId } = deleteModalData;
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`, {
+      const response = await fetch(`${API_BASE_URL}/medications/${medId}`, {
         method: 'DELETE',
       });
       
@@ -132,7 +133,7 @@ export default function PatientDetails() {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/reports/patient/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/reports/patient/${id}`, {
         method: 'POST',
         body: formData,
       });
@@ -151,7 +152,7 @@ export default function PatientDetails() {
   const handleDeleteReport = async (reportId: string) => {
     if (!confirm("Are you sure you want to delete this report?")) return;
     try {
-      const response = await fetch(`http://127.0.0.1:8000/reports/${reportId}`, {
+      const response = await fetch(`${API_BASE_URL}/reports/${reportId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -442,13 +443,13 @@ export default function PatientDetails() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                   {reports.map((report) => (
                     <div key={report.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:border-orange-300 transition-colors flex flex-col">
-                      <a href={`http://127.0.0.1:8000${report.file_path}`} target="_blank" rel="noopener noreferrer" className="block h-40 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                      <a href={`${API_BASE_URL}${report.file_path}`} target="_blank" rel="noopener noreferrer" className="block h-40 bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
                         {report.file_name?.toLowerCase().endsWith('.pdf') ? (
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-400" viewBox="0 0 20 20" fill="currentColor">
                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                            </svg>
                         ) : (
-                           <img src={`http://127.0.0.1:8000${report.file_path}`} alt="Report" className="w-full h-full object-cover" />
+                           <img src={`${API_BASE_URL}${report.file_path}`} alt="Report" className="w-full h-full object-cover" />
                         )}
                       </a>
                       <div className="p-4 flex flex-col flex-1">

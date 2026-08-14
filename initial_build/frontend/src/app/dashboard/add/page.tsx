@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "../../config";
 
 interface MedicineCandidate {
   name: string;
@@ -31,7 +33,7 @@ export default function AddMedication() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`http://127.0.0.1:8000/medicines/search?q=${encodeURIComponent(medName)}`);
+        const response = await fetch(`${API_BASE_URL}/medicines/search?q=${encodeURIComponent(medName)}`);
         if (response.ok) {
           const data = await response.json();
           setSearchResults(data);
@@ -63,7 +65,7 @@ export default function AddMedication() {
       }
 
       // 1. Create generic medicine (we'll just use the name for V1)
-      const medRes = await fetch("http://127.0.0.1:8000/medicines/", {
+      const medRes = await fetch(`${API_BASE_URL}/medicines/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -75,7 +77,7 @@ export default function AddMedication() {
       const medData = await medRes.json();
 
       // 2. Add patient medication
-      const addRes = await fetch("http://127.0.0.1:8000/medications/", {
+      const addRes = await fetch(`${API_BASE_URL}/medications/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

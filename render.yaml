@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: medicare-backend
+    env: python
+    buildCommand: "cd initial_build/backend && pip install -r requirements.txt"
+    startCommand: "cd initial_build/backend && export PYTHONPATH=. && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  - type: web
+    name: medicare-frontend
+    env: node
+    buildCommand: "cd initial_build/frontend && npm install && npm run build"
+    startCommand: "cd initial_build/frontend && npm run start"
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: medicare-backend
+          envVarKey: RENDER_EXTERNAL_URL
