@@ -46,6 +46,8 @@ class DashboardMedicationResponse(BaseModel):
     notes: Optional[str] = None
     time: str = "08:00 AM" # hardcoded for V1 UI
     is_active: bool
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
     model_config = ConfigDict(from_attributes=True)
 

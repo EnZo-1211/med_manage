@@ -21,3 +21,12 @@ class PatientMedication(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
+
+class PatientMedicationHistory(Base):
+    __tablename__ = "patient_medication_history"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_medication_id = Column(UUID(as_uuid=True), ForeignKey("patient_medications.id", ondelete="CASCADE"), nullable=False)
+    dose = Column(String, nullable=False)
+    start_date = Column(DateTime(timezone=True), server_default=func.now())
+    end_date = Column(DateTime(timezone=True), nullable=True)

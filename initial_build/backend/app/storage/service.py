@@ -19,4 +19,5 @@ def save_upload_file(upload_file: UploadFile, prefix: str = "") -> str:
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(upload_file.file, buffer)
         
-    return f"/{file_path}"
+    url_path = file_path.replace("\\", "/")
+    return f"/{url_path}"

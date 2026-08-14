@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
+
 from app.core.config import settings
 from app.patients.router import router as patients_router
 from app.access.router import router as access_router
 from app.storage.router import router as storage_router
 from app.medicines.router import router as medicines_router
 from app.medications.router import router as medications_router
+from app.reports.router import router as reports_router
 from app.core.database import Base, engine
 
 # Create tables for SQLite if they don't exist
@@ -26,6 +30,11 @@ app.include_router(access_router)
 app.include_router(storage_router)
 app.include_router(medicines_router)
 app.include_router(medications_router)
+app.include_router(reports_router)
+
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():

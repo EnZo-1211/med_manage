@@ -1,352 +1,160 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function Dashboard() {
+export default function PatientsList() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [medications, setMedications] = useState<any[]>([]);
-  const [patientName, setPatientName] = useState<string>("Unknown Patient");
-  const [patientCode, setPatientCode] = useState<string>("P-Unknown");
-  const [role, setRole] = useState<string | null>(null);
-  
-  // Custom Modal State for Toggle
-  const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState<{ medId: string; medName: string; currentStatus: boolean } | null>(null);
-
-  // Custom Modal State for Delete
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteModalData, setDeleteModalData] = useState<{ medId: string; medName: string } | null>(null);
+  const [patients, setPatients] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("patient_id");
-      const userRole = localStorage.getItem("access_role");
-      setRole(userRole);
-      
-      if (!token) {
-        router.push("/");
-        return;
-      }
-      
+    const fetchPatients = async () => {
       try {
-        // Fetch patient details
-        const patientResponse = await fetch(`http://127.0.0.1:8000/patients/${token}`);
-        if (patientResponse.ok) {
-          const patientData = await patientResponse.json();
-          setPatientName(patientData.name);
-          setPatientCode(patientData.patient_code);
+        const response = await fetch(`http://127.0.0.1:8000/patients/`);
+        if (response.ok) {
+          const data = await response.json();
+          setPatients(data);
+        } else {
+          console.error("Failed to fetch patients");
         }
-
-        // Fetch medications
-        fetchMedications(token);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching patients:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [router]);
+    fetchPatients();
+  }, []);
 
-  const fetchMedications = async (token: string) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/patient/${token}`);
-      if (response.ok) {
-        const data = await response.json();
-        setMedications(data);
-      } else {
-        console.error("Failed to fetch medications");
-      }
-    } catch (error) {
-      console.error("Error fetching medications:", error);
-    }
+  const calculateAge = (dob: string | null) => {
+    if (!dob) return "N/A";
+    const birthDate = new Date(dob);
+    const difference = Date.now() - birthDate.getTime();
+    const ageDate = new Date(difference);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
   };
 
-  const confirmToggle = (medId: string, currentStatus: boolean, medName: string) => {
-    if (role !== 'editor') return;
-    setModalData({ medId, medName, currentStatus });
-    setShowModal(true);
-  };
-
-  const executeToggle = async () => {
-    if (!modalData) return;
-    const { medId, currentStatus, medName } = modalData;
-    const action = currentStatus ? "deactivate" : "activate";
+  const timeAgo = (dateStr: string) => {
+    if (!dateStr) return "Unknown";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !currentStatus })
-      });
-      
-      if (response.ok) {
-        const token = localStorage.getItem("patient_id");
-        if (token) fetchMedications(token);
-      } else {
-        alert(`Failed to ${action} medication.`);
-      }
-    } catch (error) {
-      console.error("Error toggling medication status:", error);
-      alert(`An error occurred while trying to ${action} medication.`);
-    } finally {
-      setShowModal(false);
-      setModalData(null);
-    }
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  const confirmDelete = (medId: string, medName: string) => {
-    if (role !== 'editor') return;
-    setDeleteModalData({ medId, medName });
-    setShowDeleteModal(true);
-  };
-
-  const executeDelete = async () => {
-    if (!deleteModalData) return;
-    const { medId, medName } = deleteModalData;
-    
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/medications/${medId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        const token = localStorage.getItem("patient_id");
-        if (token) fetchMedications(token);
-      } else {
-        alert(`Failed to delete medication.`);
-      }
-    } catch (error) {
-      console.error("Error deleting medication:", error);
-      alert(`An error occurred while trying to delete medication.`);
-    } finally {
-      setShowDeleteModal(false);
-      setDeleteModalData(null);
-    }
-  };
-
-  if (loading) return null;
-
-  const activeMedications = medications.filter(m => m.is_active);
-  const inactiveMedications = medications.filter(m => !m.is_active);
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen w-full px-6 py-6 animate-in fade-in duration-500">
-      
-      {/* Background elements */}
-      <div className="fixed inset-0 z-[-1] overflow-hidden">
-        <div className="absolute top-[10%] right-[20%] w-[30%] h-[30%] rounded-full bg-blue-500/10 blur-[100px]" />
+    <div className="w-full max-w-6xl mx-auto animate-in fade-in duration-300">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+        <p className="text-gray-500 text-sm mt-1">Manage all patients</p>
       </div>
 
-      <header className="flex justify-between items-center mb-10 pt-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Daily Schedule</h1>
-          <p className="text-gray-400 mt-1">Patient: {patientName} ({patientCode})</p>
-        </div>
-        <button 
-          onClick={() => {
-            localStorage.removeItem("patient_id");
-            router.push("/");
-          }}
-          className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-        >
-          Sign Out
-        </button>
-      </header>
-
-      <main>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-white">Active Medications</h2>
-          {role === 'editor' && (
-            <Link href="/dashboard/add" className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="relative w-full sm:w-96">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input 
+              type="text" 
+              placeholder="Search patients by name or ID..." 
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+            />
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <select className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2">
+              <option>All Patients</option>
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+            
+            <button className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors shadow-sm whitespace-nowrap">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
               </svg>
-              Add New
-            </Link>
-          )}
+              Add Patient
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-          {activeMedications.length === 0 && (
-            <div className="col-span-full text-center text-gray-500 py-8">No active medications</div>
-          )}
-          {activeMedications.map((med) => (
-            <div key={med.id} className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-5 hover:bg-slate-800/40 transition-all cursor-default group">
-              
-              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10 group-hover:border-blue-500/50 transition-colors">
-                <img src={med.medicine_image || "https://via.placeholder.com/150/3b82f6/ffffff?text=Pill"} alt={med.medicine_name} className="w-full h-full object-cover" />
-              </div>
-              
-              <div className="flex-grow">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-bold text-white">{med.medicine_name}</h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium border border-blue-500/20">
-                    {med.dose}
-                  </span>
-                </div>
-                <p className="text-gray-400 text-sm mt-1">{med.frequency}</p>
-                {med.notes && (
-                  <p className="text-gray-500 text-xs mt-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {med.notes}
-                  </p>
-                )}
-              </div>
-
-              <div className="shrink-0 flex flex-row items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto mt-4 sm:mt-0">
-                 <div className="text-sm font-semibold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/10 mb-2">
-                   {med.time}
-                 </div>
-                 
-                 {role === 'editor' && (
-                   <div className="flex items-center gap-3">
-                     <label className="relative inline-flex items-center cursor-pointer" title="Deactivate">
-                       <input 
-                         type="checkbox" 
-                         className="sr-only peer" 
-                         checked={med.is_active} 
-                         onChange={() => confirmToggle(med.id, med.is_active, med.medicine_name)}
-                       />
-                       <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                     </label>
-
-                     <Link href={`/dashboard/edit/${med.id}`} className="text-gray-500 hover:text-white p-1 transition-colors" title="Edit">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                         <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                         <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                       </svg>
-                     </Link>
-
-                     <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="text-red-400/70 hover:text-red-400 p-1 transition-colors" title="Delete">
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                         <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                       </svg>
-                     </button>
-                   </div>
-                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {inactiveMedications.length > 0 && (
-          <div className="mt-12">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-400">Inactive Medications</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full opacity-60">
-              {inactiveMedications.map((med) => (
-                <div key={med.id} className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-5 transition-all cursor-default">
-                  
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10 transition-colors grayscale">
-                    <img src={med.medicine_image || "https://via.placeholder.com/150/3b82f6/ffffff?text=Pill"} alt={med.medicine_name} className="w-full h-full object-cover" />
-                  </div>
-                  
-                  <div className="flex-grow">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-white line-through">{med.medicine_name}</h3>
-                      <span className="px-2.5 py-0.5 rounded-full bg-gray-500/20 text-gray-300 text-xs font-medium border border-gray-500/20">
-                        {med.dose}
-                      </span>
-                    </div>
-                    <p className="text-gray-400 text-sm mt-1">{med.frequency}</p>
-                  </div>
-
-                  <div className="shrink-0 flex flex-row items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto mt-4 sm:mt-0">
-                     {role === 'editor' && (
-                       <div className="flex items-center gap-3 mt-4 sm:mt-0">
-                         <label className="relative inline-flex items-center cursor-pointer" title="Activate">
-                           <input 
-                             type="checkbox" 
-                             className="sr-only peer" 
-                             checked={med.is_active} 
-                             onChange={() => confirmToggle(med.id, med.is_active, med.medicine_name)}
-                           />
-                           <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-                         </label>
-
-                         <Link href={`/dashboard/edit/${med.id}`} className="text-gray-500 hover:text-white p-1 transition-colors" title="Edit">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                             <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                             <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                           </svg>
-                         </Link>
-
-                         <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="text-red-400/70 hover:text-red-400 p-1 transition-colors" title="Delete">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                             <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                           </svg>
-                         </button>
-                       </div>
-                     )}
-                  </div>
-                </div>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-200">
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient ID</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient Name</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Age</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {patients.map((patient) => (
+                <tr key={patient.id} className="hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => router.push(`/dashboard/patients/${patient.id}`)}>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{patient.patient_code}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">{patient.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{calculateAge(patient.date_of_birth)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{timeAgo(patient.updated_at || patient.created_at)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
+                      patient.is_active 
+                        ? 'bg-green-100 text-green-700 border border-green-200' 
+                        : 'bg-gray-100 text-gray-700 border border-gray-200'
+                    }`}>
+                      {patient.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-gray-400 hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Custom Confirmation Modal */}
-      {showModal && modalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-white mb-2">
-              {modalData.currentStatus ? "Deactivate" : "Activate"} Medication
-            </h3>
-            <p className="text-gray-400 mb-6">
-              Are you sure you want to {modalData.currentStatus ? "deactivate" : "activate"} <strong>{modalData.medName}</strong>? 
-              {modalData.currentStatus ? " It will be moved to the inactive list." : " It will be moved back to your active schedule."}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button 
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:bg-slate-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={executeToggle}
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-              >
-                Confirm
-              </button>
-            </div>
+              {patients.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 text-sm">
+                    No patients found. Add a patient to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination Footer */}
+        <div className="p-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-500">
+          <div>Showing 1 to {patients.length} of {patients.length} patients</div>
+          <div className="flex gap-1">
+            <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 disabled:opacity-50" disabled>&lt;</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-md bg-[#FF6600] text-white font-medium shadow-sm">1</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100">2</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100">3</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 disabled:opacity-50">&gt;</button>
           </div>
         </div>
-      )}
-      {/* Custom Delete Confirmation Modal */}
-      {showDeleteModal && deleteModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-white mb-2">Delete Medication</h3>
-            <p className="text-gray-400 mb-6">
-              Are you sure you want to completely delete <strong>{deleteModalData.medName}</strong>? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button 
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:bg-slate-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={executeDelete}
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

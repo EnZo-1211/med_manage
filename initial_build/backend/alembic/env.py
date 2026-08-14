@@ -16,6 +16,7 @@ from app.patients.models import Patient
 from app.access.models import PatientAccess
 from app.medicines.models import Medicine
 from app.medications.models import PatientMedication
+from app.reports.models import PatientReport
 
 config = context.config
 

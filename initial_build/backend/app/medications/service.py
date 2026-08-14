@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from app.medications.models import PatientMedication
+from sqlalchemy import func
+from app.medications.models import PatientMedication, PatientMedicationHistory
 from app.medications.schemas import PatientMedicationCreate, PatientMedicationUpdate
 import uuid
 from typing import List
@@ -34,6 +35,15 @@ def add_medication(db: Session, medication: PatientMedicationCreate) -> PatientM
     db.add(db_med)
     db.commit()
     db.refresh(db_med)
+    
+    # Create initial history record
+    history = PatientMedicationHistory(
+        patient_medication_id=db_med.id,
+        dose=db_med.dose
+    )
+    db.add(history)
+    db.commit()
+    
     return db_med
 
 def remove_medication(db: Session, medication_id: uuid.UUID) -> bool:
@@ -53,10 +63,33 @@ def update_medication(db: Session, medication_id: uuid.UUID, update_data: Patien
     if not med:
         return None
 
+    old_dose = med.dose
+    old_is_active = med.is_active
+
     # Update existing record
     update_dict = update_data.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
         setattr(med, key, value)
+
+    # Handle history updates
+    dose_changed = old_dose != med.dose
+    deactivated = (old_is_active is True and med.is_active is False)
+    reactivated = (old_is_active is False and med.is_active is True)
+
+    if dose_changed or deactivated or reactivated:
+        current_history = db.query(PatientMedicationHistory).filter(
+            PatientMedicationHistory.patient_medication_id == medication_id,
+            PatientMedicationHistory.end_date.is_(None)
+        ).first()
+        if current_history:
+            current_history.end_date = func.now()
+            
+    if dose_changed or reactivated:
+        new_history = PatientMedicationHistory(
+            patient_medication_id=medication_id,
+            dose=med.dose
+        )
+        db.add(new_history)
 
     db.commit()
     db.refresh(med)

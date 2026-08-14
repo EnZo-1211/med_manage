@@ -36,45 +36,40 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6">
-      <div className="absolute inset-0 z-[-1] overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/20 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/20 blur-[120px]" />
-      </div>
-      
-      <div className="w-full max-w-md glass-panel p-8 rounded-2xl animate-in fade-in zoom-in duration-500">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-200 animate-in fade-in zoom-in duration-500">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">MedManage</h1>
-          <p className="text-sm text-gray-400 mt-2">Access patient medication dashboard</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">MediCare</h1>
+          <p className="text-sm text-gray-500 mt-2">Admin Dashboard Access</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
-            <label htmlFor="patientCode" className="text-sm font-medium text-gray-300">Patient ID</label>
+            <label htmlFor="patientCode" className="text-sm font-medium text-gray-700">Admin ID / Patient ID</label>
             <input
               id="patientCode"
               type="text"
               placeholder="e.g. 100"
               required
-              className="w-full px-4 py-3 rounded-xl input-field text-sm"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm"
               value={patientCode}
               onChange={(e) => setPatientCode(e.target.value)}
             />
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="accessCode" className="text-sm font-medium text-gray-300">Access Code</label>
+            <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">Access Code</label>
             <input
               id="accessCode"
               type="password"
               placeholder="Enter your secure access code"
               required
-              className="w-full px-4 py-3 rounded-xl input-field text-sm tracking-widest"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm tracking-widest"
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
             />
@@ -83,7 +78,7 @@ export default function Home() {
           <button
             type="submit"
             disabled={loading || !patientCode || !accessCode}
-            className="w-full py-3 mt-4 rounded-xl btn-primary flex justify-center items-center group disabled:opacity-50"
+            className="w-full py-3 mt-4 rounded-xl bg-[#FF6600] hover:bg-[#E65C00] text-white flex justify-center items-center group disabled:opacity-50 transition-colors shadow-sm"
           >
             {loading ? (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
