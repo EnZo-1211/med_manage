@@ -2,42 +2,51 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL, apiFetch } from "./config";
+import Script from "next/script";
 
 export default function Home() {
-  const [patientCode, setPatientCode] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleGoogleCallback = async (response: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/access/login`, {
+      const res = await apiFetch(`${API_BASE_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_code: patientCode, access_code: accessCode }),
+        body: JSON.stringify({ id_token: response.credential }),
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("patient_id", data.patient_id);
-        localStorage.setItem("access_role", data.role);
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("session_token", data.session_token);
+        localStorage.setItem("user_email", data.email);
+        if (data.name) localStorage.setItem("user_name", data.name);
+        if (data.avatar_url) localStorage.setItem("user_avatar", data.avatar_url);
         router.push("/dashboard");
       } else {
-        alert("Invalid Patient ID or Access Code");
+        setError("Invalid Google Sign-In");
       }
     } catch (error) {
       console.error("Login failed", error);
-      alert("Failed to connect to server");
-    } finally {
-      setLoading(false);
+      setError("Failed to connect to server");
     }
   };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onLoad={() => {
+        if ((window as any).google) {
+          (window as any).google.accounts.id.initialize({
+            client_id: "717818816381-fhuud0lguf7djggk4nq2d3l38g8cejki.apps.googleusercontent.com", // Your Google Client ID
+            callback: handleGoogleCallback
+          });
+          (window as any).google.accounts.id.renderButton(
+            document.getElementById("google-signin-button"),
+            { theme: "outline", size: "large", width: "100%" }
+          );
+        }
+      }} />
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-200 animate-in fade-in zoom-in duration-500">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
@@ -46,57 +55,14 @@ export default function Home() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">MediCare</h1>
-          <p className="text-sm text-gray-500 mt-2">Admin Dashboard Access</p>
+          <p className="text-sm text-gray-500 mt-2">Sign in to manage medications</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div className="space-y-2">
-            <label htmlFor="patientCode" className="text-sm font-medium text-gray-700">Admin ID / Patient ID</label>
-            <input
-              id="patientCode"
-              type="text"
-              placeholder="e.g. 100"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm"
-              value={patientCode}
-              onChange={(e) => setPatientCode(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="accessCode" className="text-sm font-medium text-gray-700">Access Code</label>
-            <input
-              id="accessCode"
-              type="password"
-              placeholder="Enter your secure access code"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm tracking-widest"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !patientCode || !accessCode}
-            className="w-full py-3 mt-4 rounded-xl bg-[#FF6600] hover:bg-[#E65C00] text-white flex justify-center items-center group disabled:opacity-50 transition-colors shadow-sm"
-          >
-            {loading ? (
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <>
-                Access Dashboard
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </>
-            )}
-          </button>
-        </form>
+        {error && <div className="text-red-500 text-sm text-center mb-4">{error}</div>}
+        
+        <div className="flex justify-center w-full" id="google-signin-button"></div>
       </div>
     </main>
   );
 }
+

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE_URL } from "../../../config";
+import { API_BASE_URL, apiFetch } from "../../../config";
 
 export default function PatientDetails() {
   const { id } = useParams();
@@ -26,23 +26,33 @@ export default function PatientDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalData, setDeleteModalData] = useState<{ medId: string; medName: string } | null>(null);
 
+  // Toast State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
   const fetchData = async () => {
     try {
       // Fetch patient details
-      const patientResponse = await fetch(`${API_BASE_URL}/patients/${id}`);
+      const patientResponse = await apiFetch(`${API_BASE_URL}/patients/${id}`);
       if (patientResponse.ok) {
         const patientData = await patientResponse.json();
         setPatient(patientData);
         
         // Fetch medications
-        const medResponse = await fetch(`${API_BASE_URL}/medications/patient/${id}`);
+        const medResponse = await apiFetch(`${API_BASE_URL}/medications/patient/${id}`);
         if (medResponse.ok) {
           const medData = await medResponse.json();
           setMedications(medData);
         }
 
         // Fetch reports
-        const reportsResponse = await fetch(`${API_BASE_URL}/reports/patient/${id}`);
+        const reportsResponse = await apiFetch(`${API_BASE_URL}/reports/patient/${id}`);
         if (reportsResponse.ok) {
           const reportsData = await reportsResponse.json();
           setReports(reportsData);
@@ -76,7 +86,7 @@ export default function PatientDetails() {
     const action = currentStatus ? "deactivate" : "activate";
     
     try {
-      const response = await fetch(`${API_BASE_URL}/medications/${medId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/medications/${medId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus })
@@ -107,12 +117,13 @@ export default function PatientDetails() {
     const { medId } = deleteModalData;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/medications/${medId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/medications/${medId}`, {
         method: 'DELETE',
       });
       
       if (response.ok) {
         fetchData();
+        showToast(`${deleteModalData.medName} deleted successfully`);
       } else {
         alert("Failed to delete medication.");
       }
@@ -133,7 +144,7 @@ export default function PatientDetails() {
     formData.append('file', file);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/reports/patient/${id}`, {
+      const response = await apiFetch(`${API_BASE_URL}/reports/patient/${id}`, {
         method: 'POST',
         body: formData,
       });
@@ -152,7 +163,7 @@ export default function PatientDetails() {
   const handleDeleteReport = async (reportId: string) => {
     if (!confirm("Are you sure you want to delete this report?")) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/reports/${reportId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/reports/${reportId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -220,12 +231,12 @@ export default function PatientDetails() {
           </div>
         </div>
         
-        <button className="py-2.5 px-6 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
+        <Link href={`/dashboard/patients/${id}/edit`} className="py-2.5 px-6 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
           Edit Patient
-        </button>
+        </Link>
       </div>
 
       {/* Bottom Section: Tabs and Content */}
@@ -311,33 +322,60 @@ export default function PatientDetails() {
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600 mb-4 flex-1">
-                          {med.frequency && <span>{med.frequency}</span>}
-                          {med.frequency && med.time && <span className="text-gray-300">•</span>}
-                          {med.time && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                          {med.frequency && <span className="font-semibold text-gray-800">{med.frequency}</span>}
+                          {med.frequency && (med.time || med.day_of_week) && <span className="text-gray-300">•</span>}
+                          {med.time && med.frequency !== "Once a week" && med.time.split(',').map((t: string, i: number) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                               </svg>
-                              {med.time.includes('Morning') ? 'Morning' : med.time.includes('Night') ? 'Night' : med.time}
+                              {t.trim()}
+                            </span>
+                          ))}
+                          {med.day_of_week && med.frequency === "Once a week" && (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                              </svg>
+                              {med.day_of_week}
                             </span>
                           )}
-                          {med.notes && <div className="w-full text-xs text-gray-500 mt-1">{med.notes}</div>}
+                          {med.notes && (
+                            <div className="w-full mt-3 bg-gradient-to-r from-orange-50/80 to-transparent border-l-4 border-orange-500 p-3 rounded-r-xl">
+                              <div className="flex gap-2 items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <div>
+                                  <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest block mb-0.5">Note</span>
+                                  <p className="text-xs text-gray-700 leading-relaxed font-medium">
+                                    {med.notes}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {role === 'editor' && (
-                          <div className="flex items-center justify-end gap-1 pt-3 border-t border-gray-100 mt-auto">
-                            <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors" title="Edit">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                            </button>
+                        <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                          <div className="text-[11px] text-gray-500 font-medium truncate pr-2">
+                            {(med.added_by_name || med.added_by_email) ? `Added by ${med.added_by_name || 'User'}${med.added_by_email ? ` (${med.added_by_email})` : ''}` : ''}
                           </div>
-                        )}
+                          {role === 'editor' && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                              </button>
+                              <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -384,23 +422,43 @@ export default function PatientDetails() {
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-500 mb-4 flex-1">
-                          {med.frequency && <span>{med.frequency}</span>}
+                          {med.frequency && <span className="font-semibold text-gray-700">{med.frequency}</span>}
+                          {med.notes && (
+                            <div className="w-full mt-3 bg-gray-50 border-l-4 border-gray-400 p-3 rounded-r-xl opacity-90">
+                              <div className="flex gap-2 items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <div>
+                                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">Note</span>
+                                  <p className="text-xs text-gray-600 leading-relaxed">
+                                    {med.notes}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {role === 'editor' && (
-                          <div className="flex items-center justify-end gap-1 pt-3 border-t border-gray-200 mt-auto">
-                            <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Edit">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                            </button>
+                        <div className="mt-auto pt-3 border-t border-gray-200 flex items-center justify-between">
+                          <div className="text-[11px] text-gray-500 font-medium truncate pr-2">
+                            {(med.added_by_name || med.added_by_email) ? `Added by ${med.added_by_name || 'User'}${med.added_by_email ? ` (${med.added_by_email})` : ''}` : ''}
                           </div>
-                        )}
+                          {role === 'editor' && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                              </button>
+                              <button onClick={() => confirmDelete(med.id, med.medicine_name)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -592,6 +650,18 @@ export default function PatientDetails() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="font-medium text-sm">{toastMessage}</span>
           </div>
         </div>
       )}

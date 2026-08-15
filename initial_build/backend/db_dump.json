@@ -1,0 +1,131 @@
+{
+  "patients": [
+    {
+      "id": "afa9da110c8744debc3d8ba0497fee00",
+      "patient_code": "100",
+      "name": "Bou",
+      "date_of_birth": "1950-01-01",
+      "gender": "Female",
+      "profile_image_url": null,
+      "notes": null,
+      "is_active": 1,
+      "created_at": "2026-08-11 03:57:25",
+      "updated_at": "2026-08-15 06:06:28",
+      "blood_group": null
+    }
+  ],
+  "patient_access": [
+    {
+      "id": "650506454ec5498fa0ec677349b487e6",
+      "patient_id": "afa9da110c8744debc3d8ba0497fee00",
+      "access_code_hash": "$2b$12$ni11qoYC90QnsKDN//GVMOQjUawKnoy52Cr6qBLI4D4NtxXVvwa8O",
+      "role": "viewer",
+      "status": "ACTIVE",
+      "created_at": "2026-08-11 03:57:25",
+      "expires_at": null,
+      "last_used_at": "2026-08-11 04:06:25.428887"
+    },
+    {
+      "id": "03cbc3e0ca86416a8ada9ab68003d525",
+      "patient_id": "afa9da110c8744debc3d8ba0497fee00",
+      "access_code_hash": "$2b$12$8f05uowrIvVsNESIwSm2DOwSNJPtleO4VmXv24rdaa4q4lSrySX1e",
+      "role": "editor",
+      "status": "ACTIVE",
+      "created_at": "2026-08-11 03:57:25",
+      "expires_at": null,
+      "last_used_at": "2026-08-15 05:47:02.508343"
+    }
+  ],
+  "medicines": [
+    {
+      "id": "3ed029bcd1834de4a3d37e7e89e1e0eb",
+      "name": "Grllinctus Dx",
+      "generic_name": null,
+      "brand_name": null,
+      "strength": null,
+      "form": null,
+      "manufacturer": null,
+      "primary_image_url": "https://via.placeholder.com/150/3b82f6/ffffff?text=Pill",
+      "external_source": null,
+      "external_id": null,
+      "created_at": "2026-08-11 05:09:32",
+      "updated_at": null
+    },
+    {
+      "id": "f1a22949baf94dedadf871c435a52b80",
+      "name": "Lidocam",
+      "generic_name": null,
+      "brand_name": null,
+      "strength": null,
+      "form": null,
+      "manufacturer": null,
+      "primary_image_url": "https://via.placeholder.com/150/3b82f6/ffffff?text=Pill",
+      "external_source": null,
+      "external_id": null,
+      "created_at": "2026-08-15 06:22:32",
+      "updated_at": null
+    }
+  ],
+  "patient_medications": [
+    {
+      "id": "7caeb448d77b43b89e6c7848a28d4297",
+      "patient_id": "afa9da110c8744debc3d8ba0497fee00",
+      "medicine_id": "3ed029bcd1834de4a3d37e7e89e1e0eb",
+      "dose": "10ml",
+      "frequency": "Twice daily",
+      "route": null,
+      "instructions": null,
+      "start_date": null,
+      "end_date": null,
+      "notes": "After food.",
+      "is_active": 1,
+      "created_at": "2026-08-11 05:17:05",
+      "updated_at": "2026-08-14 11:12:22",
+      "created_by": null,
+      "updated_by": null,
+      "time": null,
+      "day_of_week": null
+    },
+    {
+      "id": "f56ecf2cb8064749adbad224da645093",
+      "patient_id": "afa9da110c8744debc3d8ba0497fee00",
+      "medicine_id": "f1a22949baf94dedadf871c435a52b80",
+      "dose": "1 tablet",
+      "frequency": "Once daily",
+      "route": null,
+      "instructions": "After food",
+      "start_date": "2026-08-15",
+      "end_date": null,
+      "notes": "Just before going to bed",
+      "is_active": 1,
+      "created_at": "2026-08-15 06:22:32",
+      "updated_at": null,
+      "created_by": null,
+      "updated_by": null,
+      "time": null,
+      "day_of_week": null
+    }
+  ],
+  "alembic_version": [
+    {
+      "version_num": "93360cf34297"
+    }
+  ],
+  "patient_medication_history": [
+    {
+      "id": "004b0d073c91449da12b9a9d2c0aca4b",
+      "patient_medication_id": "7caeb448d77b43b89e6c7848a28d4297",
+      "dose": "10ml",
+      "start_date": "2026-08-14 11:12:22",
+      "end_date": null
+    },
+    {
+      "id": "ab3b8b755cc743e89da161adb741c1e6",
+      "patient_medication_id": "f56ecf2cb8064749adbad224da645093",
+      "dose": "1 tablet",
+      "start_date": "2026-08-15 06:22:32",
+      "end_date": null
+    }
+  ],
+  "patient_reports": []
+}

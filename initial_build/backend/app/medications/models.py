@@ -15,12 +15,15 @@ class PatientMedication(Base):
     instructions = Column(Text, nullable=True)
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
+    time = Column(String, nullable=True)
+    day_of_week = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    updated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
 class PatientMedicationHistory(Base):
     __tablename__ = "patient_medication_history"

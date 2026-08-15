@@ -5,12 +5,16 @@ import os
 
 from app.core.config import settings
 from app.patients.router import router as patients_router
-from app.access.router import router as access_router
+from app.auth.routes import router as auth_router
 from app.storage.router import router as storage_router
 from app.medicines.router import router as medicines_router
 from app.medications.router import router as medications_router
 from app.reports.router import router as reports_router
 from app.core.database import Base, engine
+
+# Import all models to ensure create_all works
+from app.auth.models import User, PatientUser
+from app.activity.models import PatientActivity
 
 # Create tables for SQLite if they don't exist
 Base.metadata.create_all(bind=engine)
@@ -26,7 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(patients_router)
-app.include_router(access_router)
+app.include_router(auth_router)
 app.include_router(storage_router)
 app.include_router(medicines_router)
 app.include_router(medications_router)

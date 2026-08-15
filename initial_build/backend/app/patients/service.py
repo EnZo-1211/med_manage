@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.patients.models import Patient
 from app.patients.schemas import PatientCreate, PatientUpdate
+from app.auth.models import User
+from app.activity.models import PatientActivity
 import uuid
 
 def generate_patient_code(db: Session) -> str:
@@ -25,7 +27,24 @@ def get_patient(db: Session, patient_id: uuid.UUID) -> Patient:
     return db.query(Patient).filter(Patient.id == patient_id).first()
 
 def get_patients(db: Session, skip: int = 0, limit: int = 100) -> list[Patient]:
-    return db.query(Patient).offset(skip).limit(limit).all()
+    results = (
+        db.query(Patient, User.name, User.email)
+        .outerjoin(User, Patient.created_by == User.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    patients_out = []
+    for patient, user_name, user_email in results:
+        patient.added_by_name = user_name
+        patient.added_by_email = user_email
+        
+        last_activity = db.query(PatientActivity).filter(PatientActivity.patient_id == patient.id).order_by(PatientActivity.created_at.desc()).first()
+        patient.last_updated_at = last_activity.created_at if last_activity else (patient.updated_at or patient.created_at)
+        
+        patients_out.append(patient)
+    return patients_out
 
 def update_patient(db: Session, patient_id: uuid.UUID, patient_update: PatientUpdate) -> Patient:
     db_patient = get_patient(db, patient_id)

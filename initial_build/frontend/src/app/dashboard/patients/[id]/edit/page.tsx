@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE_URL, apiFetch } from "../../config";
+import { API_BASE_URL, apiFetch } from "../../../../config";
 
-export default function AddPatient() {
+export default function EditPatient() {
+  const { id } = useParams();
   const router = useRouter();
   
   const [name, setName] = useState("");
@@ -14,19 +15,47 @@ export default function AddPatient() {
   const [bloodGroup, setBloodGroup] = useState("");
   const [notes, setNotes] = useState("");
   
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await apiFetch(`${API_BASE_URL}/patients/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setName(data.name || "");
+          setDateOfBirth(data.date_of_birth || "");
+          setGender(data.gender || "");
+          setBloodGroup(data.blood_group || "");
+          setNotes(data.notes || "");
+        } else {
+          console.error("Patient not found");
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchPatient();
+    }
+  }, [id, router]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     
     try {
-      const response = await apiFetch(`${API_BASE_URL}/patients/`, {
-        method: "POST",
+      const response = await apiFetch(`${API_BASE_URL}/patients/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name,
-          date_of_birth: dateOfBirth ? dateOfBirth : undefined,
+          name: name || undefined,
+          date_of_birth: dateOfBirth || undefined,
           gender: gender || undefined,
           blood_group: bloodGroup || undefined,
           notes: notes || undefined
@@ -34,10 +63,9 @@ export default function AddPatient() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        router.replace(`/dashboard`);
+        router.push(`/dashboard/patients/${id}`);
       } else {
-        alert("Failed to add patient.");
+        alert("Failed to update patient.");
       }
     } catch (error) {
       console.error(error);
@@ -46,6 +74,14 @@ export default function AddPatient() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto animate-in fade-in duration-300 py-6">
@@ -61,12 +97,14 @@ export default function AddPatient() {
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Add Patient</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Patient</h1>
           <nav className="flex text-sm text-gray-500 mt-1">
             <ol className="flex items-center space-x-2">
               <li><Link href="/dashboard" className="hover:text-gray-900 transition-colors">Patients</Link></li>
               <li><span>/</span></li>
-              <li className="text-gray-900 font-medium">Add New</li>
+              <li><Link href={`/dashboard/patients/${id}`} className="hover:text-gray-900 transition-colors">{name}</Link></li>
+              <li><span>/</span></li>
+              <li className="text-gray-900 font-medium">Edit</li>
             </ol>
           </nav>
         </div>
@@ -91,6 +129,7 @@ export default function AddPatient() {
               <label className="text-sm font-medium text-gray-700 block">Date of Birth</label>
               <input
                 type="date"
+                required
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
@@ -154,7 +193,7 @@ export default function AddPatient() {
             <button 
               type="submit" 
               className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-[#FF6600] hover:bg-[#E65C00] transition-colors shadow-sm disabled:opacity-50 flex items-center"
-              disabled={saving || !name}
+              disabled={saving || !name || !dateOfBirth}
             >
               {saving ? (
                 <>
@@ -165,7 +204,7 @@ export default function AddPatient() {
                   Saving...
                 </>
               ) : (
-                "Save Patient"
+                "Save Changes"
               )}
             </button>
           </div>

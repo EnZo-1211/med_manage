@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE_URL } from "../../../../config";
+import { API_BASE_URL, apiFetch } from "../../../../config";
 
 interface MedicineCandidate {
   name: string;
@@ -22,10 +22,24 @@ export default function AddMedicine() {
   
   const [dose, setDose] = useState("1 tablet");
   const [frequency, setFrequency] = useState("Twice daily");
-  const [timing, setTiming] = useState("After food");
+  const [timing, setTiming] = useState("After food"); // old timing (route/instructions)
+  const [isScheduleEnabled, setIsScheduleEnabled] = useState(false);
+  const [specificTimes, setSpecificTimes] = useState<string[]>(['', '', '', '']);
+  const [dayOfWeek, setDayOfWeek] = useState("Monday");
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (medName.length < 2) {
@@ -37,7 +51,7 @@ export default function AddMedicine() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/medicines/search?q=${encodeURIComponent(medName)}`);
+        const response = await apiFetch(`${API_BASE_URL}/medicines/search?q=${encodeURIComponent(medName)}`);
         if (response.ok) {
           const data = await response.json();
           setSearchResults(data);
@@ -62,22 +76,48 @@ export default function AddMedicine() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/medications/`, {
+      // 1. Create/Find medicine genericly first
+      const medRes = await apiFetch(`${API_BASE_URL}/medicines/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          name: medName,
+          primary_image_url: "https://via.placeholder.com/150/3b82f6/ffffff?text=Pill" 
+        })
+      });
+      const medData = await medRes.json();
+
+      const isWeekly = frequency === "Once a week";
+      
+      // Figure out how many times to save based on frequency
+      let numInputs = 0;
+      if (frequency === "Once daily") numInputs = 1;
+      else if (frequency === "Twice daily") numInputs = 2;
+      else if (frequency === "Thrice daily" || frequency === "Every 8 hours") numInputs = 3;
+      
+      const validTimes = specificTimes.slice(0, numInputs).filter(t => t !== "");
+      const timeString = isScheduleEnabled && !isWeekly && validTimes.length > 0 ? validTimes.join(',') : undefined;
+      const dayString = isScheduleEnabled && isWeekly ? dayOfWeek : undefined;
+
+      // 2. Add patient medication
+      const response = await apiFetch(`${API_BASE_URL}/medications/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patient_id: id,
-          medicine_name: medName,
+          medicine_id: medData.id,
           dose,
           frequency,
-          timing,
+          instructions: timing, // Use instructions field for 'timing' (After food, etc)
+          time: timeString,
+          day_of_week: dayString,
           start_date: startDate,
           notes
         }),
       });
 
       if (response.ok) {
-        router.push(`/dashboard/patients/${id}`);
+        router.replace(`/dashboard/patients/${id}`);
       } else {
         console.error("Failed to save");
       }
@@ -127,7 +167,7 @@ export default function AddMedicine() {
           
           <div className="mb-8">
             <label className="text-sm font-medium text-gray-700 block mb-2">Medicine Name</label>
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <input
                 type="text"
                 required
@@ -173,7 +213,7 @@ export default function AddMedicine() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Dose</label>
+              <label className="text-sm font-medium text-gray-700">Dose (per serving)</label>
               <select 
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
                 value={dose}
@@ -197,11 +237,12 @@ export default function AddMedicine() {
                 <option>Twice daily</option>
                 <option>Thrice daily</option>
                 <option>As needed</option>
+                <option>Once a week</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Timing</label>
+              <label className="text-sm font-medium text-gray-700">Instructions</label>
               <select 
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
                 value={timing}
@@ -215,8 +256,66 @@ export default function AddMedicine() {
             </div>
           </div>
 
+            <div className="md:col-span-3 space-y-4">
+              <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={isScheduleEnabled}
+                  onChange={(e) => setIsScheduleEnabled(e.target.checked)}
+                  className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300"
+                />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Add Specific Schedule (Optional)</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Set exact times or days for this medication</div>
+                </div>
+              </label>
+
+              {isScheduleEnabled && (
+                <div className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
+                  {frequency === "Once a week" ? (
+                    <div className="space-y-2 max-w-sm">
+                      <label className="text-sm font-medium text-gray-700">Day of Week</label>
+                      <select 
+                        className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                        value={dayOfWeek}
+                        onChange={(e) => setDayOfWeek(e.target.value)}
+                      >
+                        <option>Monday</option>
+                        <option>Tuesday</option>
+                        <option>Wednesday</option>
+                        <option>Thursday</option>
+                        <option>Friday</option>
+                        <option>Saturday</option>
+                        <option>Sunday</option>
+                      </select>
+                    </div>
+                  ) : frequency === "As needed" ? (
+                    <div className="text-sm text-gray-500 italic">No specific schedule needed for "As needed" frequency.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {Array.from({ length: frequency === "Once daily" ? 1 : frequency === "Twice daily" ? 2 : 3 }).map((_, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Dose {idx + 1} Time</label>
+                          <input 
+                            type="time" 
+                            className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-3 text-sm"
+                            value={specificTimes[idx]}
+                            onChange={(e) => {
+                              const newTimes = [...specificTimes];
+                              newTimes[idx] = e.target.value;
+                              setSpecificTimes(newTimes);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-             <div className="space-y-2">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Start Date</label>
               <div className="relative">
                 <input 

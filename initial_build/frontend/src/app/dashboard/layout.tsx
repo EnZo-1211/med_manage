@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +11,16 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [userName, setUserName] = useState("User");
+  const [userAvatar, setUserAvatar] = useState("");
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const name = localStorage.getItem("user_name");
+    const avatar = localStorage.getItem("user_avatar");
+    if (name) setUserName(name);
+    if (avatar) setUserAvatar(avatar);
+  }, []);
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: "home" },
@@ -72,12 +82,18 @@ export default function DashboardLayout({
           </nav>
 
           <div className="p-4 border-t border-gray-200">
-            <Link href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#FF6600] hover:bg-orange-50 rounded-xl transition-colors w-full">
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.href = "/";
+              }} 
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#FF6600] hover:bg-orange-50 rounded-xl transition-colors w-full"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
               </svg>
               Logout
-            </Link>
+            </button>
           </div>
         </aside>
       )}
@@ -145,11 +161,52 @@ export default function DashboardLayout({
               </svg>
               <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full border border-white"></span>
             </button>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm">
-                A
-              </div>
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
+            <div className="relative border-l border-gray-200 pl-4">
+              <button 
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="flex items-center gap-2 focus:outline-none hover:opacity-80 transition-opacity"
+              >
+                {userAvatar ? (
+                  <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full border border-gray-200" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-gray-700 hidden sm:block">{userName}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 hidden sm:block" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {/* Profile Dropdown */}
+              {isProfileDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsProfileDropdownOpen(false)}></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Link href="#" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Account Settings
+                    </Link>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button 
+                      onClick={() => {
+                        localStorage.clear();
+                        window.location.href = "/";
+                      }} 
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
