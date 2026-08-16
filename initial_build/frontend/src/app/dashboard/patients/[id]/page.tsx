@@ -212,26 +212,26 @@ export default function PatientDetails() {
       </nav>
 
       {/* Top Section: Profile Card taking full width */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 mb-6">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-          <div className="w-24 h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6">
+        <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6 w-full">
+          <div className="w-16 h-16 sm:w-24 sm:h-24 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 sm:h-12 sm:w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <div className="text-center md:text-left pt-2">
-            <h2 className="text-2xl font-bold text-gray-900">{patient.name}</h2>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-sm text-gray-500 mt-2">
-              <span>Patient ID: {patient.patient_code}</span>
-              <span>•</span>
+          <div className="text-left pt-0 sm:pt-2 flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{patient.name}</h2>
+            <div className="flex flex-wrap items-center justify-start gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">
+              <span>ID: {patient.patient_code}</span>
+              <span className="hidden sm:inline">•</span>
               <span>Age: {calculateAge(patient.date_of_birth)}</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>{patient.gender || 'Unknown'}</span>
             </div>
           </div>
         </div>
         
-        <Link href={`/dashboard/patients/${id}/edit`} className="py-2.5 px-6 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
+        <Link href={`/dashboard/patients/${id}/edit`} className="w-full sm:w-auto py-2 sm:py-2.5 px-4 sm:px-6 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors flex justify-center items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
@@ -242,12 +242,12 @@ export default function PatientDetails() {
       {/* Bottom Section: Tabs and Content */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 px-2 overflow-x-auto">
+        <div className="flex border-b border-gray-200 px-1 sm:px-2 overflow-x-auto">
           {['Overview', 'Medications', 'Reports', 'History'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab.toLowerCase())}
-              className={`px-8 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.toLowerCase()
                   ? 'border-orange-500 text-gray-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -268,11 +268,11 @@ export default function PatientDetails() {
               
               {/* Active Medications */}
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Current Medications</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">Current Medications</h3>
                   <Link 
                     href={`/dashboard/patients/${id}/add`}
-                    className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center transition-colors shadow-sm"
+                    className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg text-sm font-medium flex justify-center items-center transition-colors shadow-sm w-full sm:w-auto"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -286,13 +286,13 @@ export default function PatientDetails() {
                     No active medications found for this patient.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                     {activeMedications.map((med) => (
-                      <div key={med.id} className="flex flex-col p-5 rounded-xl border bg-white border-gray-200 shadow-sm relative group hover:border-orange-300 transition-colors">
+                      <div key={med.id} className="flex flex-col p-3 sm:p-4 rounded-xl border bg-white border-gray-200 shadow-sm relative group hover:border-orange-300 transition-colors">
                         
                         {/* Toggle Switch */}
                         {role === 'editor' && (
-                          <div className="absolute top-4 right-4 z-10">
+                          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
                             <label className="relative inline-flex items-center cursor-pointer" title="Deactivate">
                               <input 
                                 type="checkbox" 
@@ -300,55 +300,55 @@ export default function PatientDetails() {
                                 checked={med.is_active !== false} 
                                 onChange={() => confirmToggle(med.id, med.is_active !== false, med.medicine_name, med.dose, med.frequency, med.notes)}
                               />
-                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                              <div className="w-8 h-4 sm:w-9 sm:h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 sm:after:h-4 sm:after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
                             </label>
                           </div>
                         )}
 
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-14 h-14 bg-gray-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-gray-200">
+                        <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-gray-200">
                             {med.medicine_image ? (
                               <img src={med.medicine_image} alt={med.medicine_name} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-2xl text-gray-300">💊</span>
+                              <span className="text-xl sm:text-2xl text-gray-300">💊</span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 pr-8">
-                            <h4 className="text-base font-bold text-gray-900 truncate" title={med.medicine_name}>
+                          <div className="flex-1 min-w-0 pr-10">
+                            <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate" title={med.medicine_name}>
                               {med.medicine_name}
                             </h4>
-                            {med.dose && <div className="text-sm text-gray-500 mt-0.5">{med.dose}</div>}
+                            {med.dose && <div className="text-xs sm:text-sm text-gray-500 mt-0.5">{med.dose}</div>}
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600 mb-4 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 sm:gap-y-2 text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 flex-1">
                           {med.frequency && <span className="font-semibold text-gray-800">{med.frequency}</span>}
                           {med.frequency && (med.time || med.day_of_week) && <span className="text-gray-300">•</span>}
                           {med.time && med.frequency !== "Once a week" && med.time.split(',').map((t: string, i: number) => (
-                            <span key={i} className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <span key={i} className="inline-flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-medium text-orange-600 bg-orange-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-100">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-3.5 sm:w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                               </svg>
                               {t.trim()}
                             </span>
                           ))}
                           {med.day_of_week && med.frequency === "Once a week" && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <span className="inline-flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-medium text-blue-600 bg-blue-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-100">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-3.5 sm:w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                               </svg>
                               {med.day_of_week}
                             </span>
                           )}
                           {med.notes && (
-                            <div className="w-full mt-3 bg-gradient-to-r from-orange-50/80 to-transparent border-l-4 border-orange-500 p-3 rounded-r-xl">
-                              <div className="flex gap-2 items-start">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <div className="w-full mt-1.5 sm:mt-2 bg-gradient-to-r from-orange-50/80 to-transparent border-l-2 sm:border-l-4 border-orange-500 p-2 rounded-r-lg">
+                              <div className="flex gap-1.5 sm:gap-2 items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                 </svg>
                                 <div>
-                                  <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest block mb-0.5">Note</span>
-                                  <p className="text-xs text-gray-700 leading-relaxed font-medium">
+                                  <span className="text-[9px] sm:text-[10px] font-bold text-orange-600 uppercase tracking-widest block mb-0.5">Note</span>
+                                  <p className="text-[11px] sm:text-xs text-gray-700 leading-relaxed font-medium">
                                     {med.notes}
                                   </p>
                                 </div>
@@ -357,7 +357,7 @@ export default function PatientDetails() {
                           )}
                         </div>
 
-                        <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-100 flex items-center justify-between">
                           <div className="text-[11px] text-gray-500 font-medium truncate pr-2">
                             {(med.added_by_name || med.added_by_email) ? `Added by ${med.added_by_name || 'User'}${med.added_by_email ? ` (${med.added_by_email})` : ''}` : ''}
                           </div>
@@ -384,15 +384,15 @@ export default function PatientDetails() {
 
               {/* Inactive Medications */}
               {inactiveMedications.length > 0 && (
-                <div className="mt-8 pt-8 border-t border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-6">Inactive Medications</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 opacity-70">
+                <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-100">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-4 sm:mb-6">Inactive Medications</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 opacity-70">
                     {inactiveMedications.map((med) => (
-                      <div key={med.id} className="flex flex-col p-5 rounded-xl border bg-gray-50 border-gray-200 relative">
+                      <div key={med.id} className="flex flex-col p-3 sm:p-4 rounded-xl border bg-gray-50 border-gray-200 relative">
                         
                         {/* Toggle Switch */}
                         {role === 'editor' && (
-                          <div className="absolute top-4 right-4 z-10">
+                          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
                             <label className="relative inline-flex items-center cursor-pointer" title="Activate">
                               <input 
                                 type="checkbox" 
@@ -400,38 +400,38 @@ export default function PatientDetails() {
                                 checked={med.is_active !== false} 
                                 onChange={() => confirmToggle(med.id, false, med.medicine_name, med.dose, med.frequency, med.notes)}
                               />
-                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                              <div className="w-8 h-4 sm:w-9 sm:h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 sm:after:h-4 sm:after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
                             </label>
                           </div>
                         )}
 
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-gray-200 grayscale">
+                        <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-gray-200 grayscale">
                             {med.medicine_image ? (
                               <img src={med.medicine_image} alt={med.medicine_name} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-2xl text-gray-300">💊</span>
+                              <span className="text-xl sm:text-2xl text-gray-300">💊</span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 pr-8">
-                            <h4 className="text-base font-bold text-gray-500 truncate" title={med.medicine_name}>
+                          <div className="flex-1 min-w-0 pr-10">
+                            <h4 className="text-sm sm:text-base font-bold text-gray-500 truncate" title={med.medicine_name}>
                               {med.medicine_name}
                             </h4>
-                            {med.dose && <div className="text-sm text-gray-400 mt-0.5">{med.dose}</div>}
+                            {med.dose && <div className="text-xs sm:text-sm text-gray-400 mt-0.5">{med.dose}</div>}
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-500 mb-4 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 sm:gap-y-2 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 flex-1">
                           {med.frequency && <span className="font-semibold text-gray-700">{med.frequency}</span>}
                           {med.notes && (
-                            <div className="w-full mt-3 bg-gray-50 border-l-4 border-gray-400 p-3 rounded-r-xl opacity-90">
-                              <div className="flex gap-2 items-start">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <div className="w-full mt-1.5 sm:mt-2 bg-gray-50 border-l-2 sm:border-l-4 border-gray-400 p-2 rounded-r-lg opacity-90">
+                              <div className="flex gap-1.5 sm:gap-2 items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                 </svg>
                                 <div>
-                                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">Note</span>
-                                  <p className="text-xs text-gray-600 leading-relaxed">
+                                  <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">Note</span>
+                                  <p className="text-[11px] sm:text-xs text-gray-600 leading-relaxed">
                                     {med.notes}
                                   </p>
                                 </div>
@@ -440,7 +440,7 @@ export default function PatientDetails() {
                           )}
                         </div>
 
-                        <div className="mt-auto pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200 flex items-center justify-between">
                           <div className="text-[11px] text-gray-500 font-medium truncate pr-2">
                             {(med.added_by_name || med.added_by_email) ? `Added by ${med.added_by_name || 'User'}${med.added_by_email ? ` (${med.added_by_email})` : ''}` : ''}
                           </div>
@@ -477,9 +477,9 @@ export default function PatientDetails() {
           
           {activeTab === 'reports' && (
             <div className="space-y-8">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Prescriptions & Reports</h3>
-                <label className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center transition-colors shadow-sm cursor-pointer">
+                <label className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex justify-center items-center transition-colors shadow-sm cursor-pointer w-full sm:w-auto">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>

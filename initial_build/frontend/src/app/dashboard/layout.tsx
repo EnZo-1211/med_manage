@@ -53,7 +53,8 @@ export default function DashboardLayout({
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               let isActive = false;
-              if (item.name === "Dashboard" && pathname.startsWith("/dashboard")) isActive = true;
+              if (item.name === "Dashboard" && (pathname === "/dashboard" || pathname === "/dashboard/")) isActive = true;
+              else if (item.name !== "Dashboard" && pathname.startsWith(item.href) && item.href !== "#") isActive = true;
               
               return (
                 <Link
@@ -111,22 +112,31 @@ export default function DashboardLayout({
 
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10 gap-4">
-          <div className="flex items-center w-1/4">
+          <div className="flex-1 flex items-center">
             {/* Hamburger Button (Always visible on mobile, toggles sidebar on desktop) */}
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-500 hover:text-gray-700 shrink-0" title="Toggle Navigation">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+            {pathname !== "/dashboard" && pathname !== "/dashboard/" && (
+              <Link href="/dashboard" className="hidden sm:flex ml-6 items-center text-sm font-medium text-gray-500 hover:text-orange-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                Go back to dashboard
+              </Link>
+            )}
           </div>
             
           {/* Horizontal Navigation (Hidden on mobile, visible on desktop when sidebar is closed) */}
-          <div className="flex-1 flex justify-center overflow-hidden">
+          <div className="flex-none flex justify-center overflow-hidden">
             {!isSidebarOpen && (
               <nav className="hidden md:flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {navItems.map((item) => {
                   let isActive = false;
-                  if (item.name === "Dashboard" && pathname.startsWith("/dashboard")) isActive = true;
+                  if (item.name === "Dashboard" && (pathname === "/dashboard" || pathname === "/dashboard/")) isActive = true;
+                  else if (item.name !== "Dashboard" && pathname.startsWith(item.href) && item.href !== "#") isActive = true;
                   
                   return (
                     <Link
@@ -154,7 +164,7 @@ export default function DashboardLayout({
             )}
           </div>
           
-          <div className="flex items-center justify-end w-1/4 gap-4 shrink-0">
+          <div className="flex-1 flex items-center justify-end gap-4 shrink-0">
             <button className="text-gray-400 hover:text-gray-600 relative hidden sm:block">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -167,7 +177,7 @@ export default function DashboardLayout({
                 className="flex items-center gap-2 focus:outline-none hover:opacity-80 transition-opacity"
               >
                 {userAvatar ? (
-                  <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full border border-gray-200" />
+                  <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full border border-gray-200" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm">
                     {userName.charAt(0).toUpperCase()}

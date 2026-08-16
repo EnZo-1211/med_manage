@@ -81,14 +81,14 @@ export default function PatientsList() {
             />
           </div>
           
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <select className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <select className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2 w-full sm:w-auto">
               <option>All Patients</option>
               <option>Active</option>
               <option>Inactive</option>
             </select>
             
-            <button onClick={() => router.push('/dashboard/add')} className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors shadow-sm whitespace-nowrap">
+            <button onClick={() => router.push('/dashboard/add')} className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-4 py-2 rounded-lg text-sm font-medium flex justify-center items-center transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
               </svg>
@@ -104,9 +104,9 @@ export default function PatientsList() {
               <tr className="bg-gray-50/50 border-b border-gray-200">
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient ID</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient Name</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Age</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Added By</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</th>
+                <th className="hidden md:table-cell px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Age</th>
+                <th className="hidden md:table-cell px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Added By</th>
+                <th className="hidden md:table-cell px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
@@ -116,9 +116,9 @@ export default function PatientsList() {
                 <tr key={patient.id} className="hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => router.push(`/dashboard/patients/${patient.id}`)}>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{patient.patient_code}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">{patient.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{calculateAge(patient.date_of_birth)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{patient.added_by_name || "Unknown"}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{timeAgo(patient.last_updated_at || patient.updated_at || patient.created_at)}</td>
+                  <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-600">{calculateAge(patient.date_of_birth)}</td>
+                  <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-600">{patient.added_by_name || "Unknown"}</td>
+                  <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-500">{timeAgo(patient.last_updated_at || patient.updated_at || patient.created_at)}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
                       patient.is_active 
@@ -149,7 +149,7 @@ export default function PatientsList() {
         </div>
         
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-500">
+        <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
           <div>Showing 1 to {patients.length} of {patients.length} patients</div>
           <div className="flex gap-1">
             <button className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 disabled:opacity-50" disabled>&lt;</button>
