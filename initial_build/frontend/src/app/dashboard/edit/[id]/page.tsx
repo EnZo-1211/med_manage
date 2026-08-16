@@ -11,6 +11,8 @@ export default function EditMedication() {
   const id = params.id as string;
   
   const [medName, setMedName] = useState("");
+  const [dose, setDose] = useState("");
+  const [frequency, setFrequency] = useState("");
   const [notes, setNotes] = useState("");
   const [isScheduleEnabled, setIsScheduleEnabled] = useState(false);
   const [specificTimes, setSpecificTimes] = useState<string[]>(['', '', '', '']);
