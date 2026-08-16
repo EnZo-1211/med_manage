@@ -13,7 +13,8 @@ from app.core.database import Base
 
 # Import all models here for autogenerate support
 from app.patients.models import Patient
-from app.access.models import PatientAccess
+from app.auth.models import User, PatientUser
+from app.activity.models import PatientActivity
 from app.medicines.models import Medicine
 from app.medications.models import PatientMedication
 from app.reports.models import PatientReport
