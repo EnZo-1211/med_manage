@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.core.database import get_db
 from app.reports.models import PatientReport
-from app.reports.schemas import PatientReportResponse
+from app.reports.schemas import PatientReportResponse, PatientReportUpdate
 from app.storage.service import save_upload_file
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -15,6 +15,7 @@ async def upload_report(
     patient_id: UUID,
     file: UploadFile = File(...),
     notes: Optional[str] = Form(None),
+    custom_file_name: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     try:
@@ -25,7 +26,7 @@ async def upload_report(
     new_report = PatientReport(
         patient_id=patient_id,
         file_path=url,
-        file_name=file.filename,
+        file_name=custom_file_name if custom_file_name else file.filename,
         notes=notes
     )
     db.add(new_report)
@@ -45,3 +46,22 @@ def delete_report(report_id: UUID, db: Session = Depends(get_db)):
     db.delete(report)
     db.commit()
     return {"message": "Report deleted successfully"}
+
+@router.patch("/{report_id}", response_model=PatientReportResponse)
+def update_report(
+    report_id: UUID,
+    report_update: PatientReportUpdate,
+    db: Session = Depends(get_db)
+):
+    report = db.query(PatientReport).filter(PatientReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    if report_update.file_name is not None:
+        report.file_name = report_update.file_name
+    if report_update.notes is not None:
+        report.notes = report_update.notes
+        
+    db.commit()
+    db.refresh(report)
+    return report

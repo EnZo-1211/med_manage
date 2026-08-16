@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "supersecretkey_for_local_dev"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    # Supabase (optional for local, required for prod storage)
+    SUPABASE_URL: str | None = None
+    SUPABASE_KEY: str | None = None
 
     class Config:
         env_file = ".env"

@@ -26,6 +26,19 @@ export default function PatientDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalData, setDeleteModalData] = useState<{ medId: string; medName: string } | null>(null);
 
+  // Report Upload Modal State
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportName, setReportName] = useState("");
+  const [reportNotes, setReportNotes] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
+
+  // Edit Report Modal State
+  const [showEditReportModal, setShowEditReportModal] = useState(false);
+  const [editingReport, setEditingReport] = useState<any>(null);
+  const [editReportName, setEditReportName] = useState("");
+
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -136,12 +149,34 @@ export default function PatientDetails() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
+    setReportFile(file);
+    // Remove extension for default name
+    const nameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+    setReportName(nameWithoutExt || file.name);
+    setReportNotes("");
+    setShowReportModal(true);
+    // Reset the input so they can select the same file again if they cancel
+    e.target.value = "";
+  };
+
+  const executeReportUpload = async () => {
+    if (!reportFile) return;
+    setIsUploading(true);
     
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', reportFile);
+    
+    // Add extension back if not present in the custom name
+    const ext = reportFile.name.split('.').pop() || '';
+    const finalName = reportName.trim() === "" ? reportFile.name : (reportName.toLowerCase().endsWith(`.${ext.toLowerCase()}`) ? reportName : `${reportName}.${ext}`);
+    
+    formData.append('custom_file_name', finalName);
+    if (reportNotes) {
+      formData.append('notes', reportNotes);
+    }
     
     try {
       const response = await apiFetch(`${API_BASE_URL}/reports/patient/${id}`, {
@@ -151,12 +186,17 @@ export default function PatientDetails() {
       
       if (response.ok) {
         fetchData(); // Refresh reports
+        showToast("Report uploaded successfully");
       } else {
         alert("Failed to upload report.");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
       alert("Error uploading file.");
+    } finally {
+      setIsUploading(false);
+      setShowReportModal(false);
+      setReportFile(null);
     }
   };
 
@@ -168,11 +208,45 @@ export default function PatientDetails() {
       });
       if (response.ok) {
         fetchData();
+        showToast("Report deleted successfully");
       } else {
         alert("Failed to delete report.");
       }
     } catch (error) {
       console.error("Error deleting report:", error);
+    }
+  };
+
+  const openEditReport = (report: any) => {
+    setEditingReport(report);
+    setEditReportName(report.file_name || "");
+    setShowEditReportModal(true);
+  };
+
+  const executeEditReport = async () => {
+    if (!editingReport) return;
+    try {
+      const response = await apiFetch(`${API_BASE_URL}/reports/${editingReport.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          file_name: editReportName
+        }),
+      });
+      
+      if (response.ok) {
+        fetchData();
+        showToast("Report renamed successfully");
+        setShowEditReportModal(false);
+        setEditingReport(null);
+      } else {
+        alert("Failed to rename report.");
+      }
+    } catch (error) {
+      console.error("Error renaming report:", error);
+      alert("Error renaming report.");
     }
   };
 
@@ -479,18 +553,15 @@ export default function PatientDetails() {
             <div className="space-y-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Prescriptions & Reports</h3>
-                <label className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex justify-center items-center transition-colors shadow-sm cursor-pointer w-full sm:w-auto">
+                <button 
+                  onClick={() => setShowUploadOptions(true)}
+                  className="bg-[#FF6600] hover:bg-[#E65C00] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex justify-center items-center transition-colors shadow-sm cursor-pointer w-full sm:w-auto"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   Upload Report
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*,.pdf" 
-                    onChange={handleFileUpload} 
-                  />
-                </label>
+                </button>
               </div>
 
               {reports.length === 0 ? (
@@ -511,7 +582,14 @@ export default function PatientDetails() {
                         )}
                       </a>
                       <div className="p-4 flex flex-col flex-1">
-                        <div className="text-sm font-medium text-gray-900 truncate" title={report.file_name}>{report.file_name || 'Report'}</div>
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="text-sm font-medium text-gray-900 truncate" title={report.file_name}>{report.file_name || 'Report'}</div>
+                          <button onClick={() => openEditReport(report)} className="text-gray-400 hover:text-gray-600 shrink-0 p-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+                        </div>
                         <div className="text-xs text-gray-500 mt-1">{new Date(report.created_at).toLocaleDateString()}</div>
                         {report.notes && <div className="text-sm text-gray-600 mt-2 truncate">{report.notes}</div>}
                         <button onClick={() => handleDeleteReport(report.id)} className="text-red-500 text-xs mt-auto pt-3 hover:text-red-700 font-medium text-left">Delete</button>
@@ -648,6 +726,158 @@ export default function PatientDetails() {
                 className="px-4 py-2 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Options Modal */}
+      {showUploadOptions && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Upload Report</h3>
+              <button onClick={() => setShowUploadOptions(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              <label className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-200">
+                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Take Photo</div>
+                  <div className="text-xs text-gray-500">Use camera to scan prescription</div>
+                </div>
+                <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { setShowUploadOptions(false); handleFileUpload(e); }} />
+              </label>
+
+              <label className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-200">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Photo Library</div>
+                  <div className="text-xs text-gray-500">Choose from your gallery</div>
+                </div>
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => { setShowUploadOptions(false); handleFileUpload(e); }} />
+              </label>
+
+              <label className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-200">
+                <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Document</div>
+                  <div className="text-xs text-gray-500">Upload a PDF report</div>
+                </div>
+                <input type="file" className="hidden" accept="application/pdf" onChange={(e) => { setShowUploadOptions(false); handleFileUpload(e); }} />
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Report Modal */}
+      {showEditReportModal && editingReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Rename Report</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Report Name</label>
+                <input 
+                  type="text" 
+                  value={editReportName}
+                  onChange={(e) => setEditReportName(e.target.value)}
+                  className="w-full border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm p-2.5 border"
+                  placeholder="E.g., Blood Test Results"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <button 
+                onClick={() => { setShowEditReportModal(false); setEditingReport(null); }}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeEditReport}
+                disabled={!editReportName.trim()}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-[#FF6600] hover:bg-[#E65C00] text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Upload Modal */}
+      {showReportModal && reportFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Upload Report</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Report Name</label>
+                <input 
+                  type="text" 
+                  value={reportName}
+                  onChange={(e) => setReportName(e.target.value)}
+                  className="w-full border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm p-2.5 border"
+                  placeholder="E.g., Blood Test Results"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea 
+                  value={reportNotes}
+                  onChange={(e) => setReportNotes(e.target.value)}
+                  className="w-full border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm p-2.5 border"
+                  placeholder="Add any extra details..."
+                  rows={3}
+                ></textarea>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <button 
+                onClick={() => { setShowReportModal(false); setReportFile(null); }}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors"
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeReportUpload}
+                disabled={isUploading || !reportName.trim()}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-[#FF6600] hover:bg-[#E65C00] text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  "Upload"
+                )}
               </button>
             </div>
           </div>

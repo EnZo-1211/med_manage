@@ -43,3 +43,8 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Medication Management API"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
